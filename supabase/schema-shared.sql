@@ -149,6 +149,27 @@ alter table if exists cali.faqs     add column if not exists es jsonb not null d
 alter table if exists cali.team     add column if not exists es jsonb not null default '{}'::jsonb;
 
 ------------------------------------------------------------------
+-- Refuse overlapping appointments (not just identical start times)
+------------------------------------------------------------------
+create or replace function cali.prevent_booking_overlap() returns trigger
+language plpgsql security definer set search_path = cali as $$
+begin
+  if new.status <> 'cancelled' and exists (
+    select 1 from cali.bookings b
+    where b.id <> new.id and b.status <> 'cancelled' and b.date = new.date
+      and (b.time::time, b.time::time + make_interval(mins => b.minutes))
+          overlaps (new.time::time, new.time::time + make_interval(mins => new.minutes))
+  ) then
+    raise exception 'That time overlaps another appointment' using errcode = '23505';
+  end if;
+  return new;
+end $$;
+drop trigger if exists bookings_no_overlap on cali.bookings;
+create trigger bookings_no_overlap
+  before insert or update of date, time, minutes, status on cali.bookings
+  for each row execute function cali.prevent_booking_overlap();
+
+------------------------------------------------------------------
 -- Row level security
 ------------------------------------------------------------------
 do $$
