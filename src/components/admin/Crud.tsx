@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { browserClient, DB_SCHEMA } from "@/lib/supabase";
 import { revalidateSite } from "@/app/actions";
 import { useTx } from "@/lib/locale";
 import { Btn, Field, ImageField, inputCls, Notice } from "./ui";
@@ -32,12 +32,12 @@ type Props = {
   setupSql?: string;
 };
 
-export const ES_SQL = `alter table if exists public.services add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.addons   add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.looks    add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.reviews  add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.faqs     add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.team     add column if not exists es jsonb not null default '{}'::jsonb;
+export const ES_SQL = `alter table if exists ${DB_SCHEMA}.services add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists ${DB_SCHEMA}.addons   add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists ${DB_SCHEMA}.looks    add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists ${DB_SCHEMA}.reviews  add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists ${DB_SCHEMA}.faqs     add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists ${DB_SCHEMA}.team     add column if not exists es jsonb not null default '{}'::jsonb;
 notify pgrst, 'reload schema';`;
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "item";
@@ -56,7 +56,7 @@ export default function Crud({ table, title, blurb, fields, idMode, titleKey, su
 
   const load = useCallback(async () => {
     const { data, error } = await browserClient().from(table).select("*").order("sort", { ascending: true });
-    if (error?.code === "PGRST205" || error?.code === "42P01") setMissing(true);
+    if (error?.code === "PGRST205" || error?.code === "42P01" || error?.code === "PGRST106") setMissing(true);
     else if (error) setMsg({ kind: "error", text: error.message });
     else setRows(data as Row[]);
   }, [table]);

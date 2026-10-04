@@ -73,7 +73,7 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
     if (!error) return ok;
     if (error.code === "23505") return { ok: false, error: "Sorry, that time was just taken. Please pick another.", code: "taken" };
     // Schema not installed yet → fall through to in-memory demo mode.
-    if (error.code !== "42P01" && error.code !== "PGRST205") {
+    if (error.code !== "42P01" && error.code !== "PGRST205" && error.code !== "PGRST106") {
       console.error("[booking] insert failed:", error.message);
       return { ok: false, error: "We couldn't save your booking. Please try again or call the salon.", code: "save" };
     }

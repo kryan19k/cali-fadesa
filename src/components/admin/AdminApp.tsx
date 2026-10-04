@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { browserClient, hasSupabase } from "@/lib/supabase";
+import { browserClient, hasSupabase, DB_SCHEMA } from "@/lib/supabase";
 import { revalidateSite } from "@/app/actions";
 import { addons, categories, faqs, lookCategories, looks, reviews, services } from "@/lib/data";
 import { addonsEs, faqsEs, looksEs, reviewsEs, servicesEs } from "@/lib/data-es";
@@ -52,7 +52,7 @@ const lookFields: FieldDef[] = [
   { key: "kind", label: "Placeholder art style", type: "select", options: ["skin", "low", "mid", "crop", "top", "beard"], hint: "Only used when no photo is uploaded." },
   { key: "palette", label: "Colors (placeholder art): hair, skin, accent", type: "palette" },
 ];
-const TEAM_SQL = `create table if not exists public.team (
+const TEAM_SQL = `create table if not exists ${DB_SCHEMA}.team (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   role text not null default '',
@@ -63,11 +63,11 @@ const TEAM_SQL = `create table if not exists public.team (
   sort int not null default 0,
   active boolean not null default true
 );
-alter table public.team enable row level security;
-drop policy if exists "public read" on public.team;
-create policy "public read" on public.team for select to anon, authenticated using (active or public.is_admin());
-drop policy if exists "admin write" on public.team;
-create policy "admin write" on public.team for all to authenticated using (public.is_admin()) with check (public.is_admin());`;
+alter table ${DB_SCHEMA}.team enable row level security;
+drop policy if exists "public read" on ${DB_SCHEMA}.team;
+create policy "public read" on ${DB_SCHEMA}.team for select to anon, authenticated using (active or ${DB_SCHEMA}.is_admin());
+drop policy if exists "admin write" on ${DB_SCHEMA}.team;
+create policy "admin write" on ${DB_SCHEMA}.team for all to authenticated using (${DB_SCHEMA}.is_admin()) with check (${DB_SCHEMA}.is_admin());`;
 
 const teamFields: FieldDef[] = [
   { key: "photo_url", label: "Photo", type: "image" },

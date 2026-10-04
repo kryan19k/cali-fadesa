@@ -1,46 +1,56 @@
--- Cali Fades — database schema.
--- Run this ONCE in Supabase Dashboard → SQL Editor → New query → Run.
--- Safe to re-run.
+-- Cali Fades — database schema (lives in its own schema "cali" so it can share a
+-- free Supabase project with other sites).
+--
+-- BEFORE running: nothing. AFTER running (one manual step):
+--   Supabase dashboard -> Project Settings -> Data API -> "Exposed schemas": add  cali  -> Save.
+--
+-- Run this once in Supabase Dashboard -> SQL Editor -> New query -> Run. Safe to re-run.
+
+create schema if not exists cali;
+grant usage on schema cali to anon, authenticated, service_role;
+alter default privileges in schema cali grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema cali grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema cali grant all on functions to anon, authenticated, service_role;
 
 ------------------------------------------------------------------
 -- Admin identity
 ------------------------------------------------------------------
-create table if not exists public.admins (
+create table if not exists cali.admins (
   user_id uuid primary key references auth.users(id) on delete cascade
 );
-alter table public.admins enable row level security;
+alter table cali.admins enable row level security;
 
-create or replace function public.is_admin() returns boolean
-language sql security definer stable set search_path = public as $$
-  select exists (select 1 from public.admins where user_id = auth.uid());
+create or replace function cali.is_admin() returns boolean
+language sql security definer stable set search_path = cali as $$
+  select exists (select 1 from cali.admins where user_id = auth.uid());
 $$;
 
 -- The first signed-in user can claim ownership; after that it returns false.
-create or replace function public.claim_admin() returns boolean
-language plpgsql security definer set search_path = public as $$
+create or replace function cali.claim_admin() returns boolean
+language plpgsql security definer set search_path = cali as $$
 begin
   if auth.uid() is null then return false; end if;
-  if exists (select 1 from public.admins) then return false; end if;
-  insert into public.admins (user_id) values (auth.uid());
+  if exists (select 1 from cali.admins) then return false; end if;
+  insert into cali.admins (user_id) values (auth.uid());
   return true;
 end $$;
-revoke all on function public.claim_admin() from public, anon;
-grant execute on function public.claim_admin() to authenticated;
-grant execute on function public.is_admin() to anon, authenticated;
+revoke all on function cali.claim_admin() from public, anon;
+grant execute on function cali.claim_admin() to authenticated;
+grant execute on function cali.is_admin() to anon, authenticated;
 
-drop policy if exists "admins read self" on public.admins;
-create policy "admins read self" on public.admins for select to authenticated using (user_id = auth.uid());
+drop policy if exists "admins read self" on cali.admins;
+create policy "admins read self" on cali.admins for select to authenticated using (user_id = auth.uid());
 
 ------------------------------------------------------------------
 -- Content tables
 ------------------------------------------------------------------
-create table if not exists public.site_settings (
+create table if not exists cali.site_settings (
   id int primary key default 1 check (id = 1),
   data jsonb not null default '{}'::jsonb
 );
-insert into public.site_settings (id) values (1) on conflict do nothing;
+insert into cali.site_settings (id) values (1) on conflict do nothing;
 
-create table if not exists public.services (
+create table if not exists cali.services (
   id text primary key,
   name text not null,
   category text not null default 'Fades',
@@ -52,7 +62,7 @@ create table if not exists public.services (
   active boolean not null default true
 );
 
-create table if not exists public.addons (
+create table if not exists cali.addons (
   id text primary key,
   name text not null,
   blurb text not null default '',
@@ -62,7 +72,7 @@ create table if not exists public.addons (
   active boolean not null default true
 );
 
-create table if not exists public.looks (
+create table if not exists cali.looks (
   id text primary key,
   title text not null,
   category text not null default 'Fades',
@@ -78,7 +88,7 @@ create table if not exists public.looks (
   active boolean not null default true
 );
 
-create table if not exists public.reviews (
+create table if not exists cali.reviews (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   service text not null default '',
@@ -88,7 +98,7 @@ create table if not exists public.reviews (
   active boolean not null default true
 );
 
-create table if not exists public.faqs (
+create table if not exists cali.faqs (
   id uuid primary key default gen_random_uuid(),
   q text not null,
   a text not null,
@@ -96,7 +106,7 @@ create table if not exists public.faqs (
   active boolean not null default true
 );
 
-create table if not exists public.team (
+create table if not exists cali.team (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   role text not null default '',
@@ -107,7 +117,7 @@ create table if not exists public.team (
   active boolean not null default true
 );
 
-create table if not exists public.bookings (
+create table if not exists cali.bookings (
   id uuid primary key default gen_random_uuid(),
   ref text not null unique,
   service_id text not null,
@@ -127,17 +137,17 @@ create table if not exists public.bookings (
   created_at timestamptz not null default now()
 );
 -- Hard stop against two clients grabbing the exact same start time.
-create unique index if not exists bookings_slot_unique on public.bookings (date, time) where status <> 'cancelled';
+create unique index if not exists bookings_slot_unique on cali.bookings (date, time) where status <> 'cancelled';
 
 ------------------------------------------------------------------
 -- Spanish translations (one jsonb per row: {"name": "...", "blurb": "..."})
 ------------------------------------------------------------------
-alter table if exists public.services add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.addons   add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.looks    add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.reviews  add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.faqs     add column if not exists es jsonb not null default '{}'::jsonb;
-alter table if exists public.team     add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.services add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.addons   add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.looks    add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.reviews  add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.faqs     add column if not exists es jsonb not null default '{}'::jsonb;
+alter table if exists cali.team     add column if not exists es jsonb not null default '{}'::jsonb;
 notify pgrst, 'reload schema';
 
 ------------------------------------------------------------------
@@ -147,47 +157,54 @@ do $$
 declare t text;
 begin
   foreach t in array array['services','addons','looks','reviews','faqs','team'] loop
-    execute format('alter table public.%I enable row level security', t);
-    execute format('drop policy if exists "public read" on public.%I', t);
-    execute format('create policy "public read" on public.%I for select to anon, authenticated using (active or public.is_admin())', t);
-    execute format('drop policy if exists "admin write" on public.%I', t);
-    execute format('create policy "admin write" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
+    execute format('alter table cali.%I enable row level security', t);
+    execute format('drop policy if exists "public read" on cali.%I', t);
+    execute format('create policy "public read" on cali.%I for select to anon, authenticated using (active or cali.is_admin())', t);
+    execute format('drop policy if exists "admin write" on cali.%I', t);
+    execute format('create policy "admin write" on cali.%I for all to authenticated using (cali.is_admin()) with check (cali.is_admin())', t);
   end loop;
 end $$;
 
-alter table public.site_settings enable row level security;
-drop policy if exists "public read" on public.site_settings;
-create policy "public read" on public.site_settings for select to anon, authenticated using (true);
-drop policy if exists "admin write" on public.site_settings;
-create policy "admin write" on public.site_settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+alter table cali.site_settings enable row level security;
+drop policy if exists "public read" on cali.site_settings;
+create policy "public read" on cali.site_settings for select to anon, authenticated using (true);
+drop policy if exists "admin write" on cali.site_settings;
+create policy "admin write" on cali.site_settings for all to authenticated using (cali.is_admin()) with check (cali.is_admin());
 
-alter table public.bookings enable row level security;
-drop policy if exists "anyone can request" on public.bookings;
-create policy "anyone can request" on public.bookings for insert to anon, authenticated
+alter table cali.bookings enable row level security;
+drop policy if exists "anyone can request" on cali.bookings;
+create policy "anyone can request" on cali.bookings for insert to anon, authenticated
   with check (status = 'pending' and char_length(name) between 2 and 80 and char_length(notes) <= 1000);
-drop policy if exists "admin manage" on public.bookings;
-create policy "admin manage" on public.bookings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin manage" on cali.bookings;
+create policy "admin manage" on cali.bookings for all to authenticated using (cali.is_admin()) with check (cali.is_admin());
 
 -- Visitors can see WHICH times are busy, never WHO booked them.
-create or replace function public.busy_slots(from_date date, to_date date)
+create or replace function cali.busy_slots(from_date date, to_date date)
 returns table (date date, "time" text, minutes int)
-language sql security definer stable set search_path = public as $$
-  select b.date, b.time, b.minutes from public.bookings b
+language sql security definer stable set search_path = cali as $$
+  select b.date, b.time, b.minutes from cali.bookings b
   where b.status <> 'cancelled' and b.date between from_date and to_date;
 $$;
-grant execute on function public.busy_slots(date, date) to anon, authenticated;
+grant execute on function cali.busy_slots(date, date) to anon, authenticated;
 
 ------------------------------------------------------------------
 -- Image storage (portrait, portfolio photos)
 ------------------------------------------------------------------
-insert into storage.buckets (id, name, public) values ('site-media', 'site-media', true)
+insert into storage.buckets (id, name, public) values ('cali-media', 'cali-media', true)
 on conflict (id) do update set public = true;
 
-drop policy if exists "media public read" on storage.objects;
-create policy "media public read" on storage.objects for select to anon, authenticated using (bucket_id = 'site-media');
-drop policy if exists "media admin insert" on storage.objects;
-create policy "media admin insert" on storage.objects for insert to authenticated with check (bucket_id = 'site-media' and public.is_admin());
-drop policy if exists "media admin update" on storage.objects;
-create policy "media admin update" on storage.objects for update to authenticated using (bucket_id = 'site-media' and public.is_admin());
-drop policy if exists "media admin delete" on storage.objects;
-create policy "media admin delete" on storage.objects for delete to authenticated using (bucket_id = 'site-media' and public.is_admin());
+drop policy if exists "cali media public read" on storage.objects;
+create policy "cali media public read" on storage.objects for select to anon, authenticated using (bucket_id = 'cali-media');
+drop policy if exists "cali media admin insert" on storage.objects;
+create policy "cali media admin insert" on storage.objects for insert to authenticated with check (bucket_id = 'cali-media' and cali.is_admin());
+drop policy if exists "cali media admin update" on storage.objects;
+create policy "cali media admin update" on storage.objects for update to authenticated using (bucket_id = 'cali-media' and cali.is_admin());
+drop policy if exists "cali media admin delete" on storage.objects;
+create policy "cali media admin delete" on storage.objects for delete to authenticated using (bucket_id = 'cali-media' and cali.is_admin());
+
+-- Safety net for tables/functions created above.
+grant all on all tables in schema cali to anon, authenticated, service_role;
+grant all on all sequences in schema cali to anon, authenticated, service_role;
+grant execute on all functions in schema cali to anon, authenticated, service_role;
+revoke execute on function cali.claim_admin() from anon;
+notify pgrst, 'reload schema';
