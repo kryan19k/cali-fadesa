@@ -11,22 +11,22 @@ cp .env.example .env.local   # fill in this shop's own Supabase URL + publishabl
 npm run dev
 ```
 
-## Database (free): share one Supabase project
-Free Supabase accounts only get 2 projects, so this site keeps its tables in its **own schema (`cali`)** and its
-own image bucket (`cali-media`) inside a project you already have. Nothing is shared except the project itself.
+## Database: which SQL file do I run?
+Pick ONE, depending on where it goes. Run it in Supabase -> **SQL Editor** -> New query -> Run.
 
-1. Supabase dashboard -> **SQL Editor** -> paste `supabase/schema.sql` -> **Run**.
-2. **Project Settings -> Data API -> Exposed schemas**: add `cali` -> **Save**.
-3. **Authentication -> Users -> Add user** for the owner (James): email + password, tick "Auto confirm".
-   (Auth users are shared by the whole project; each site has its own owner list, so a user only gets
-   dashboard access to the site they claim.)
-4. `.env.local`: the project's URL + publishable key, plus `NEXT_PUBLIC_SUPABASE_SCHEMA=cali` and
-   `NEXT_PUBLIC_SUPABASE_BUCKET=cali-media`.
-5. Open `/admin`, sign in, press **Claim it** right away (works once), then **Load starter content**
-   and **Add Spanish translations**.
+| Where it goes | Run this | `.env.local` extras |
+|---|---|---|
+| A **new, empty** Supabase project just for this shop | `supabase/schema-own-project.sql` | none |
+| A project that **already has another site** (e.g. the hair salon's) | `supabase/schema-shared.sql` | `NEXT_PUBLIC_SUPABASE_SCHEMA=cali` and `NEXT_PUBLIC_SUPABASE_BUCKET=cali-media` |
 
-Using a dedicated project instead? Leave the schema/bucket variables unset and replace `cali.` with `public.`
-in `supabase/schema.sql` (and `cali-media` with `site-media`).
+Then run `supabase/owner-login.local.sql` (set `v_schema` at the top to `cali` or `public` to match) to create the
+dashboard login. That file is git-ignored so the password stays out of the repo; keep a copy locally.
+
+Dashboard login: **username `MrGibbs`**, password as set in that file. Open `/admin`, sign in, then press
+**Load starter content** and **Add Spanish translations**.
+
+The shared option keeps this site in its own schema + image bucket, so tables never collide with the other site
+(the schema file also exposes it to the API automatically).
 
 Until Supabase is connected the site runs on built-in sample content and bookings are kept in memory.
 

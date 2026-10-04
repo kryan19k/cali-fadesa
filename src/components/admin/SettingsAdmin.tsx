@@ -3,15 +3,13 @@ import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { revalidateSite } from "@/app/actions";
 import { mergeSettings, type SiteSettings } from "@/lib/site";
-import { useT, useTx, useLocale, intlTag } from "@/lib/locale";
-import { shades } from "@/lib/shade";
+import { useTx, useLocale, intlTag } from "@/lib/locale";
 import { Btn, Field, ImageField, inputCls, Notice } from "./ui";
 
 const order = [2, 3, 4, 5, 6, 0, 1];
 
 export default function SettingsAdmin() {
   const tx = useTx();
-  const t = useT();
   const tag = intlTag(useLocale());
   const dayName = (d: number) => new Date(2024, 0, 7 + d).toLocaleDateString(tag, { weekday: "long" });
   const [s, setS] = useState<SiteSettings | null>(null);
@@ -89,11 +87,6 @@ export default function SettingsAdmin() {
 
       <section className="grid gap-4 sm:grid-cols-2">
         <h3 className="font-display text-xl sm:col-span-2">{tx("Look & feel")}</h3>
-        <Field label="Default color shade" hint="Visitors can still change it themselves.">
-          <select className={inputCls} value={s.defaultShade} onChange={(e) => set("defaultShade", e.target.value)}>
-            {shades.map((x) => <option key={x.id} value={x.id}>{t(`shade.${x.id}`)}</option>)}
-          </select>
-        </Field>
         <Field label="Default mode">
           <select className={inputCls} value={s.defaultTheme} onChange={(e) => set("defaultTheme", e.target.value as "light" | "dark")}>
             <option value="light">{tx("Bone (light)")}</option>

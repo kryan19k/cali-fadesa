@@ -5,10 +5,6 @@ import { useSyncExternalStore } from "react";
 // Swatches show the dark-mode values; globals.css re-tunes each for light mode.
 export const shades = [
   { id: "classic", name: "Classic Red", accent: "#e63946", accent2: "#ff7b82", counter: "#3a86ff" },
-  { id: "royal", name: "Royal Blue", accent: "#3a86ff", accent2: "#8ec0ff", counter: "#ff4d5a" },
-  { id: "cali", name: "Cali Orange", accent: "#ff8a3d", accent2: "#ffc08a", counter: "#2ec4b6" },
-  { id: "gold", name: "Gold", accent: "#d4a94a", accent2: "#f0d58c", counter: "#e63946" },
-  { id: "chrome", name: "Chrome", accent: "#c9ced6", accent2: "#f4f6f8", counter: "#e63946" },
 ] as const;
 export type ShadeId = (typeof shades)[number]["id"];
 export type Theme = "light" | "dark";
@@ -55,4 +51,4 @@ export const useShade = () => useSyncExternalStore(shadeStore.subscribe, shadeSt
 export const useTheme = () => useSyncExternalStore(themeStore.subscribe, themeStore.get, () => "dark" as Theme);
 
 // Runs in <head> before paint so a returning visitor never flashes the wrong shade/theme.
-export const bootScript = `try{var d=document.documentElement,s=localStorage.getItem("${SHADE_KEY}"),t=localStorage.getItem("${THEME_KEY}");if(s)d.dataset.shade=s;if(t)d.dataset.theme=t}catch(e){}`;
+export const bootScript = `try{var t=localStorage.getItem("${THEME_KEY}");if(t)document.documentElement.dataset.theme=t}catch(e){}`;

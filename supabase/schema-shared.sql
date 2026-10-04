@@ -1,10 +1,9 @@
--- Cali Fades — database schema (lives in its own schema "cali" so it can share a
--- free Supabase project with other sites).
+-- Cali Fades: database for a project you ALREADY use for another site (for example the hair salon's).
+-- Everything lives in its own schema called "cali", so nothing collides with the other site's tables.
 --
--- BEFORE running: nothing. AFTER running (one manual step):
---   Supabase dashboard -> Project Settings -> Data API -> "Exposed schemas": add  cali  -> Save.
---
--- Run this once in Supabase Dashboard -> SQL Editor -> New query -> Run. Safe to re-run.
+-- Run once: Supabase -> SQL Editor -> New query -> paste -> Run. Safe to re-run.
+-- Then run owner-login.local.sql (creates the dashboard login). That's it.
+-- Use together with NEXT_PUBLIC_SUPABASE_SCHEMA=cali and NEXT_PUBLIC_SUPABASE_BUCKET=cali-media.
 
 create schema if not exists cali;
 grant usage on schema cali to anon, authenticated, service_role;
@@ -148,7 +147,6 @@ alter table if exists cali.looks    add column if not exists es jsonb not null d
 alter table if exists cali.reviews  add column if not exists es jsonb not null default '{}'::jsonb;
 alter table if exists cali.faqs     add column if not exists es jsonb not null default '{}'::jsonb;
 alter table if exists cali.team     add column if not exists es jsonb not null default '{}'::jsonb;
-notify pgrst, 'reload schema';
 
 ------------------------------------------------------------------
 -- Row level security
@@ -207,4 +205,22 @@ grant all on all tables in schema cali to anon, authenticated, service_role;
 grant all on all sequences in schema cali to anon, authenticated, service_role;
 grant execute on all functions in schema cali to anon, authenticated, service_role;
 revoke execute on function cali.claim_admin() from anon;
+
+-- Make the Data API serve the "cali" schema (same as ticking it under Project Settings -> Data API ->
+-- Exposed schemas), so there is no manual dashboard step. If this block is not allowed on your project,
+-- add "cali" there by hand and everything else still works.
+do $$
+declare cur text;
+begin
+  select split_part(c, '=', 2) into cur
+  from pg_roles r, unnest(r.rolconfig) c
+  where r.rolname = 'authenticator' and c like 'pgrst.db_schemas=%';
+  if cur is null then cur := 'public, graphql_public'; end if;
+  if position('cali' in cur) = 0 then
+    execute format('alter role authenticator set pgrst.db_schemas = %L', cur || ', cali');
+  end if;
+exception when others then
+  raise notice 'Could not auto-expose the cali schema (%). Add it in Project Settings -> Data API -> Exposed schemas.', sqlerrm;
+end $$;
+notify pgrst, 'reload config';
 notify pgrst, 'reload schema';

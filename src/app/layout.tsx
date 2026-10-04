@@ -22,11 +22,11 @@ export const viewport: Viewport = { themeColor: "#0c0c0e" };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const content = await getContent();
-  const { defaultShade, defaultTheme } = content.settings;
+  const { defaultTheme } = content.settings;
   return (
     <html
       lang="en"
-      data-shade={defaultShade}
+      data-shade="classic"
       data-theme={defaultTheme}
       className={`${anton.variable} ${manrope.variable}`}
       suppressHydrationWarning

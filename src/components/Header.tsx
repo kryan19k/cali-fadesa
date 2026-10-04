@@ -4,30 +4,16 @@ import { usePathname } from "next/navigation";
 import { motion, useScroll, useTransform } from "motion/react";
 import { goTab } from "@/lib/tabs";
 import { useContent } from "./ContentProvider";
-import { useSlotOpts } from "@/lib/use-slots";
+import { useNextLabel } from "@/lib/use-next";
 import ThemeToggle from "./ThemeToggle";
 import LangToggle from "./LangToggle";
-import { useT, useLocale, intlTag, type TFn } from "@/lib/locale";
-import { useClientValue } from "@/lib/client-value";
-import { dateKey, formatTime, nextAvailable, parseDateKey } from "@/lib/availability";
-import ShadeSwitcher from "./ShadeSwitcher";
-
-function nextLabel(opts: Parameters<typeof nextAvailable>[2], t: TFn, tag: string) {
-  const now = new Date();
-  const n = nextAvailable(now, 60, opts);
-  if (!n) return "";
-  const d = parseDateKey(n.key);
-  const day = n.key === dateKey(now) ? t("common.today") : d.toLocaleDateString(tag, { weekday: "short" });
-  return `${day} ${formatTime(n.time)}`;
-}
+import { useT } from "@/lib/locale";
 
 export default function Header() {
   const { settings: site } = useContent();
   const home = usePathname() === "/";
-  const opts = useSlotOpts();
   const t = useT();
-  const tag = intlTag(useLocale());
-  const next = useClientValue(() => nextLabel(opts, t, tag), "");
+  const next = useNextLabel();
   const { scrollY } = useScroll();
   const bg = useTransform(scrollY, [0, 200], [0, 1]);
   return (
@@ -45,7 +31,6 @@ export default function Header() {
         </Link>
         <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/portfolio" className="hidden text-sm text-cream/80 transition hover:text-accent lg:block">{t("nav.portfolio")}</Link>
-          <div className="hidden md:block"><ShadeSwitcher /></div>
           <LangToggle />
           <ThemeToggle />
           {next && (

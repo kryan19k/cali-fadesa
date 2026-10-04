@@ -87,9 +87,12 @@ const faqFields: FieldDef[] = [
   { key: "a", label: "Answer", type: "textarea", tr: true },
 ];
 
+// Owner logs in with a plain username; behind the scenes it is a Supabase email login.
+const toEmail = (u: string) => (u.includes("@") ? u.trim() : `${u.trim().toLowerCase()}@califades.local`);
+
 function Login() {
   const tx = useTx();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -97,9 +100,9 @@ function Login() {
     e.preventDefault();
     setBusy(true);
     setErr("");
-    const { error } = await browserClient().auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await browserClient().auth.signInWithPassword({ email: toEmail(username), password });
     setBusy(false);
-    if (error) setErr(error.message === "Invalid login credentials" ? "That email or password is incorrect." : error.message);
+    if (error) setErr(error.message === "Invalid login credentials" ? "That username or password is incorrect." : error.message);
   };
   return (
     <form onSubmit={submit} className="glass mx-auto mt-24 w-full max-w-sm space-y-5 rounded-3xl p-8">
@@ -107,7 +110,7 @@ function Login() {
         <p className="text-xs tracking-[0.3em] text-accent uppercase">{tx("Owner login")}</p>
         <h1 className="font-display mt-2 text-4xl font-light">{tx("Welcome back")}</h1>
       </div>
-      <Field label="Email"><input className={inputCls} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></Field>
+      <Field label="Username"><input className={inputCls} type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={(e) => setUsername(e.target.value)} required /></Field>
       <Field label="Password"><input className={inputCls} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></Field>
       {err && <Notice kind="error">{err}</Notice>}
       <Btn type="submit" kind="accent" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Btn>

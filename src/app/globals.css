@@ -94,8 +94,10 @@ body::after {
 .font-display { font-family: var(--font-anton), Impact, "Arial Narrow", sans-serif; font-weight: 400; letter-spacing: 0.01em; text-transform: uppercase; }
 
 .text-shade {
-  background: linear-gradient(100deg, var(--accent2), var(--accent) 55%, var(--counter));
+  background: linear-gradient(100deg, var(--accent2), var(--accent) 60%, var(--counter));
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  /* room for slanted/italic glyphs so the last letter is never cut off by the clip box */
+  padding-inline-end: 0.16em; margin-inline-end: -0.16em; padding-block: 0.08em;
 }
 
 .glass {
