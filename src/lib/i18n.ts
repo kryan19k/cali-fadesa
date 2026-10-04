@@ -212,6 +212,11 @@ const en: Dict = {
   "quiz.q2.short": "Short all over",
   "quiz.q2.medium": "A bit of length on top",
   "quiz.q2.long": "Keep it long (waves, curls, top)",
+  "book.who": "Who would you like to see?",
+  "book.any": "Anyone available",
+  "book.notWorking": "{name} isn't working this day. Pick another date, or choose someone else.",
+  "book.with": "with {name}",
+  "ticket.stylist": "Barber",
 };
 
 const es: Dict = {
@@ -412,6 +417,11 @@ const es: Dict = {
   "quiz.q2.short": "Corto en todos lados",
   "quiz.q2.medium": "Un poco de largo arriba",
   "quiz.q2.long": "Largo (ondas, rizos, parte superior)",
+  "book.who": "¿Con quién quieres atenderte?",
+  "book.any": "Cualquiera disponible",
+  "book.notWorking": "{name} no trabaja este día. Elige otra fecha u otra persona.",
+  "book.with": "con {name}",
+  "ticket.stylist": "Barbero",
 };
 
 export const dict: Record<Locale, Dict> = { en, es };

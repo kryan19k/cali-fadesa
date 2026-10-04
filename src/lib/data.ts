@@ -86,7 +86,14 @@ export const lookCategories: ("All" | LookCategory)[] = ["All", "Fades", "Tapers
 
 export type Review = { es?: Es; id: string; name: string; service: string; quote: string; stars: number };
 export type Faq = { es?: Es; id: string; q: string; a: string };
-export type TeamMember = { es?: Es; id: string; name: string; role: string; bio: string; photoUrl: string; instagram: string };
+export type TeamMember = {
+  es?: Es; id: string; name: string; role: string; bio: string; photoUrl: string; instagram: string;
+  takesBookings?: boolean;
+  /** weekly schedule; null = follows the shop hours */
+  schedule?: Record<number, [string, string] | null> | null;
+  /** services they perform; empty = all */
+  serviceIds?: string[];
+};
 
 export const reviews: Omit<Review, "id">[] = [
   { name: "Marcus T.", service: "Skin Fade", quote: "Best fade I've had in years. The blend is flawless and the line-up stays sharp for two weeks. Not going anywhere else.", stars: 5 },

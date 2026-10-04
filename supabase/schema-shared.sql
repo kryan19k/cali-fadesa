@@ -245,3 +245,68 @@ exception when others then
 end $$;
 notify pgrst, 'reload config';
 notify pgrst, 'reload schema';
+
+------------------------------------------------------------------
+-- Staff schedules, days off, per-person double-booking protection
+------------------------------------------------------------------
+alter table if exists cali.team add column if not exists takes_bookings boolean not null default true;
+alter table if exists cali.team add column if not exists schedule jsonb;
+alter table if exists cali.team add column if not exists service_ids text[] not null default '{}';
+alter table cali.bookings add column if not exists member_id text not null default 'owner';
+
+create table if not exists cali.time_off (
+  id uuid primary key default gen_random_uuid(),
+  member_id text not null default 'owner',
+  start_date date not null,
+  end_date date not null,
+  reason text not null default '',
+  sort int not null default 0,
+  active boolean not null default true,
+  check (end_date >= start_date)
+);
+alter table cali.time_off enable row level security;
+drop policy if exists "admin all" on cali.time_off;
+create policy "admin all" on cali.time_off for all to authenticated using (cali.is_admin()) with check (cali.is_admin());
+
+-- visitors learn WHO is off and WHEN, never why
+create or replace function cali.time_off_public(from_date date, to_date date)
+returns table (member_id text, start_date date, end_date date)
+language sql security definer stable set search_path = cali as $$
+  select t.member_id, t.start_date, t.end_date from cali.time_off t
+  where t.active and t.end_date >= from_date and t.start_date <= to_date;
+$$;
+grant execute on function cali.time_off_public(date, date) to anon, authenticated;
+
+-- busy times now say whose chair
+drop function if exists cali.busy_slots(date, date);
+create function cali.busy_slots(from_date date, to_date date)
+returns table (date date, "time" text, minutes int, member_id text)
+language sql security definer stable set search_path = cali as $$
+  select b.date, b.time, b.minutes, b.member_id from cali.bookings b
+  where b.status <> 'cancelled' and b.date between from_date and to_date;
+$$;
+grant execute on function cali.busy_slots(date, date) to anon, authenticated;
+
+-- two people can share a start time; one person cannot be double-booked
+drop index if exists cali.bookings_slot_unique;
+create unique index if not exists bookings_slot_unique on cali.bookings (date, time, member_id) where status <> 'cancelled';
+
+create or replace function cali.prevent_booking_overlap() returns trigger
+language plpgsql security definer set search_path = cali as $$
+begin
+  if new.status <> 'cancelled' and exists (
+    select 1 from cali.bookings b
+    where b.id <> new.id and b.status <> 'cancelled' and b.date = new.date and b.member_id = new.member_id
+      and (b.time::time, b.time::time + make_interval(mins => b.minutes))
+          overlaps (new.time::time, new.time::time + make_interval(mins => new.minutes))
+  ) then
+    raise exception 'That time overlaps another appointment' using errcode = '23505';
+  end if;
+  return new;
+end $$;
+drop trigger if exists bookings_no_overlap on cali.bookings;
+create trigger bookings_no_overlap
+  before insert or update of date, time, minutes, status, member_id on cali.bookings
+  for each row execute function cali.prevent_booking_overlap();
+
+notify pgrst, 'reload schema';
