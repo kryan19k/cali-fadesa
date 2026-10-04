@@ -4,12 +4,13 @@ import Dock from "@/components/Dock";
 import WorkPanel from "@/components/panels/WorkPanel";
 import { PortfolioHeading, PortfolioCta, BackHome } from "@/components/PortfolioIntro";
 import { getContent } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
 
 export const revalidate = 30;
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings: s } = await getContent();
-  return { title: `Portfolio — ${s.name} ${s.tagline}`, description: `Recent fades, cuts and beard work by ${s.stylist} at ${s.name} ${s.tagline}, ${s.city}.` };
+  return pageMetadata(s, { title: "Portfolio", path: "/portfolio", description: `A look at recent skin fades, tapers, beard sculpts and styles by ${s.stylist} at ${s.name} ${s.tagline}, ${s.city}.` });
 }
 
 export default async function PortfolioPage() {

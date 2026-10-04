@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Anton, Manrope } from "next/font/google";
 import { bootScript } from "@/lib/shade";
 import { getContent } from "@/lib/content";
+import { rootMetadata } from "@/lib/seo";
 import { ContentProvider } from "@/components/ContentProvider";
 import Clippers from "@/components/Clippers";
 import "./globals.css";
@@ -12,11 +13,8 @@ const anton = Anton({ variable: "--font-anton", subsets: ["latin"], weight: "400
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { settings: s } = await getContent();
-  return {
-    title: `${s.name} ${s.tagline} — Fades, Cuts & Beards in ${s.city}`,
-    description: `Book ${s.stylist} at ${s.name} ${s.tagline} in ${s.city}. Skin fades, tapers, line-ups and beard work. Browse the cuts and reserve your chair online.`,
-  };
+  const { settings } = await getContent();
+  return rootMetadata(settings);
 }
 export const viewport: Viewport = { themeColor: "#0c0c0e" };
 
