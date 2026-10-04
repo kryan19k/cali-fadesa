@@ -19,11 +19,13 @@ const tabs = [
   ["bookings", "Bookings"],
   ["services", "Services"],
   ["addons", "Add-ons"],
-  ["team", "Team"],
   ["looks", "Portfolio"],
+  ["profile", "Barber profile"],
+  ["team", "Team"],
   ["reviews", "Reviews"],
   ["faqs", "FAQ"],
-  ["settings", "Shop & site"],
+  ["text", "Page text"],
+  ["settings", "Shop & contact"],
 ] as const;
 type Tab = (typeof tabs)[number][0];
 
@@ -46,7 +48,7 @@ const lookFields: FieldDef[] = [
   { key: "before_url", label: "Before photo (optional, enables the slider)", type: "image" },
   { key: "title", label: "Title", type: "text", tr: true },
   { key: "category", label: "Category", type: "select", options: lookCategories.filter((c) => c !== "All") },
-  { key: "service_id", label: "Linked service id", type: "text", hint: "The “Book this look” button preselects this service. Copy an id from the Services tab URL list, e.g. skin-fade." },
+  { key: "service_id", label: "Service for this cut", type: "service", hint: "The “Book this cut” button on the portfolio preselects this service." },
   { key: "story", label: "Story", type: "textarea", tr: true },
   { key: "hours", label: "Time in chair (label)", type: "text", hint: "e.g. 3.5 hrs", tr: true },
   { key: "kind", label: "Placeholder art style", type: "select", options: ["skin", "low", "mid", "crop", "top", "beard"], hint: "Only used when no photo is uploaded." },
@@ -272,29 +274,31 @@ export default function AdminApp() {
           {note && <div className="mb-6"><Notice kind={note.kind}>{note.text}</Notice></div>}
           {tab === "bookings" && <BookingsAdmin />}
           {tab === "services" && (
-            <Crud key="services" table="services" title="Services" blurb="What clients can book. Price is the “from” price; duration controls how much calendar time it takes." fields={serviceFields} idMode="slug" titleKey="name"
+            <Crud key="services" table="services" title="Services" blurb="Shown on the homepage → Menu tab and in booking. Price is the “from” price; duration controls how much calendar time it takes." fields={serviceFields} idMode="slug" titleKey="name"
               subtitle={(r) => `${r.category} · $${r.price} · ${r.minutes} min`} blank={{ name: "", category: "Fades", blurb: "", price: 35, minutes: 45, deposit: 0, active: true }} />
           )}
           {tab === "addons" && (
-            <Crud key="addons" table="addons" title="Add-ons" blurb="Optional extras clients can tack onto a service." fields={addonFields} idMode="slug" titleKey="name"
+            <Crud key="addons" table="addons" title="Add-ons" blurb="Shown on the Menu tab and offered during booking. Optional extras clients can add to a service." fields={addonFields} idMode="slug" titleKey="name"
               subtitle={(r) => `+$${r.price} · +${r.minutes} min`} blank={{ name: "", blurb: "", price: 30, minutes: 15, active: true }} />
           )}
           {tab === "team" && (
-            <Crud key="team" table="team" title="Team" blurb="People shown in “Meet the crew” under the homepage banner. If this is empty, that section is hidden." fields={teamFields} idMode="uuid" titleKey="name"
+            <Crud key="team" table="team" title="Team" blurb="Other barbers shown in “Meet the crew” under the homepage banner (photo, name, role, bio). James has his own section under Barber profile; if this list is empty the crew section is hidden." fields={teamFields} idMode="uuid" titleKey="name"
               subtitle={(r) => String(r.role)} blank={{ name: "", role: "", bio: "", photo_url: null, instagram: "", active: true }} setupSql={TEAM_SQL} />
           )}
           {tab === "looks" && (
-            <Crud key="looks" table="looks" title="Portfolio" blurb="Upload your best work. Add a “before” photo to turn on the before/after slider." fields={lookFields} idMode="slug" titleKey="title"
+            <Crud key="looks" table="looks" title="Portfolio" blurb="Shown on the Portfolio page. Upload your best work (photos), and add a “before” photo to turn on the before/after slider." fields={lookFields} idMode="slug" titleKey="title"
               subtitle={(r) => String(r.category)} blank={{ title: "", category: "Fades", kind: "skin", palette: ["#111113", "#8a5a3c", "#e63946"], service_id: "", story: "", hours: "", seed: 1, image_url: null, before_url: null, active: true }} />
           )}
           {tab === "reviews" && (
-            <Crud key="reviews" table="reviews" title="Reviews" blurb="Client words on the Stories tab. Only add real reviews you have permission to share." fields={reviewFields} idMode="uuid" titleKey="name"
+            <Crud key="reviews" table="reviews" title="Reviews" blurb="Shown on the homepage → Stories tab. Only add real reviews you have permission to share." fields={reviewFields} idMode="uuid" titleKey="name"
               subtitle={(r) => `${"★".repeat(Number(r.stars) || 0)} ${r.service}`} blank={{ name: "", service: "", quote: "", stars: 5, active: true }} />
           )}
           {tab === "faqs" && (
-            <Crud key="faqs" table="faqs" title="FAQ" blurb="Questions shown on the Shop tab." fields={faqFields} idMode="uuid" titleKey="q" blank={{ q: "", a: "", active: true }} />
+            <Crud key="faqs" table="faqs" title="FAQ" blurb="Shown on the homepage → Shop tab." fields={faqFields} idMode="uuid" titleKey="q" blank={{ q: "", a: "", active: true }} />
           )}
-          {tab === "settings" && <SettingsAdmin />}
+          {tab === "profile" && <SettingsAdmin key="profile" section="profile" />}
+          {tab === "text" && <SettingsAdmin key="text" section="text" />}
+          {tab === "settings" && <SettingsAdmin key="shop" section="shop" />}
         </div>
       </div>
     </Shell>

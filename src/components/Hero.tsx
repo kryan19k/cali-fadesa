@@ -10,7 +10,7 @@ import { openNowLabel } from "@/lib/availability";
 import { useNextLabel } from "@/lib/use-next";
 import { useT, useLocale, intlTag } from "@/lib/locale";
 
-const wordKeys = ["hero.w1", "hero.w2", "hero.w3"];
+const wordKeys = ["hero.w1", "hero.w2", "hero.w3"] as const;
 const marqueeKeys = Array.from({ length: 10 }, (_, i) => `marquee.${i + 1}`);
 
 export default function Hero() {
@@ -22,6 +22,10 @@ export default function Hero() {
   const tag = intlTag(useLocale());
   const open = useClientValue(() => openNowLabel(new Date(), site.hours, t, tag), "");
   const next = useNextLabel();
+  // Owner-editable headline + ticker; blank falls back to the built-in (translated) text.
+  const words = [site.heroWord1 || t(wordKeys[0]), site.heroWord2 || t(wordKeys[1]), site.heroWord3 || t(wordKeys[2])];
+  const custom = site.marquee.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
+  const ticker = custom.length ? custom : marqueeKeys.map((k) => t(k));
 
   return (
     <section id="hero" ref={ref} className="relative isolate flex min-h-[100svh] flex-col justify-end overflow-hidden bg-ink pt-28 pb-24">
@@ -52,15 +56,15 @@ export default function Hero() {
         </motion.div>
 
         <h1 className="font-display text-[clamp(2.8rem,7.2vw,6rem)] leading-[0.98] tracking-wide text-cream/95">
-          {wordKeys.map((k, i) => (
-            <span key={k} className="mr-[0.2em] inline-block overflow-hidden pb-[0.1em] align-bottom">
+          {words.map((word, i) => (
+            <span key={i} className="mr-[0.2em] inline-block overflow-hidden pb-[0.1em] align-bottom">
               <motion.span
                 className={`inline-block ${i === 1 ? "text-shade -skew-x-6" : ""}`}
                 initial={{ y: "110%" }}
                 animate={{ y: 0 }}
                 transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               >
-                {t(k)}
+                {word}
               </motion.span>
             </span>
           ))}
@@ -94,9 +98,9 @@ export default function Hero() {
 
       <div className="relative mt-12 overflow-hidden border-y border-line bg-ink-2/70 py-3 backdrop-blur-sm" aria-hidden>
         <div className="marquee flex w-max gap-8 whitespace-nowrap">
-          {[...marqueeKeys, ...marqueeKeys].map((m, i) => (
+          {[...ticker, ...ticker].map((m, i) => (
             <span key={i} className="font-display flex items-center gap-8 text-xl text-cream/70">
-              {t(m)}<span className="text-accent">{"//"}</span>
+              {m}<span className="text-accent">{"//"}</span>
             </span>
           ))}
         </div>

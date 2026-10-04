@@ -26,9 +26,29 @@ export type SiteSettings = {
   defaultShade: string;
   defaultTheme: "light" | "dark";
   seeded: boolean;
-  /** Spanish overrides for the owner-written text (tagline, hero, about, directions). */
-  es: Partial<Record<"tagline" | "heroBlurb" | "aboutTitle" | "aboutBody" | "directionsNote", string>>;
+  /** Hero headline, three words (blank = built-in text). */
+  heroWord1: string;
+  heroWord2: string;
+  heroWord3: string;
+  /** Words in the ticker under the hero, separated by commas (blank = built-in list). */
+  marquee: string;
+  /** "Meet James" section labels (blank = built-in text). */
+  aboutKicker: string;
+  aboutMeet: string;
+  aboutCta: string;
+  /** Gift card section. */
+  showGiftCards: boolean;
+  giftAmounts: string;
+  /** Aftercare tips (empty list = built-in four tips). */
+  aftercare: AftercareTip[];
+  /** Spanish overrides for owner-written text; empty = fall back to the English / built-in text. */
+  es: Partial<Record<EsKey, string>>;
 };
+
+export type AftercareTip = { t: string; b: string; tEs?: string; bEs?: string };
+export type EsKey =
+  | "tagline" | "heroBlurb" | "aboutTitle" | "aboutBody" | "directionsNote"
+  | "heroWord1" | "heroWord2" | "heroWord3" | "marquee" | "aboutKicker" | "aboutMeet" | "aboutCta";
 
 export const defaultSettings: SiteSettings = {
   name: "Cali Fades",
@@ -62,6 +82,16 @@ export const defaultSettings: SiteSettings = {
   defaultShade: "classic",
   defaultTheme: "dark",
   seeded: false,
+  heroWord1: "",
+  heroWord2: "",
+  heroWord3: "",
+  marquee: "",
+  aboutKicker: "",
+  aboutMeet: "",
+  aboutCta: "",
+  showGiftCards: true,
+  giftAmounts: "50, 100, 150, 250",
+  aftercare: [],
   es: {
     tagline: "Barbería",
     heroBlurb: "Fades, tapers y delineados de precisión. Corte limpio, ambiente tranquilo y una silla que siempre te espera.",
@@ -79,6 +109,12 @@ export function mergeSettings(data: Partial<SiteSettings> | null | undefined): S
   const d = data ?? {};
   // JSON turns numeric keys into strings and may drop days; rebuild hours safely.
   const hours = { ...defaultSettings.hours, ...(d.hours ?? {}) };
-  return { ...defaultSettings, ...d, hours, es: { ...defaultSettings.es, ...(d.es ?? {}) } };
+  const es = { ...defaultSettings.es, ...(d.es ?? {}) };
+  // If the owner rewrote the English text but never touched the (default) Spanish, drop the stale
+  // default Spanish so Spanish visitors see the owner's text instead of the old sample copy.
+  for (const k of Object.keys(defaultSettings.es) as EsKey[]) {
+    const edited = d[k as keyof SiteSettings] !== undefined && d[k as keyof SiteSettings] !== defaultSettings[k as keyof SiteSettings];
+    if (edited && (!d.es?.[k] || d.es[k] === defaultSettings.es[k])) es[k] = "";
+  }
+  return { ...defaultSettings, ...d, hours, es, aftercare: Array.isArray(d.aftercare) ? d.aftercare : [] };
 }
-
